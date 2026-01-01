@@ -42,7 +42,7 @@ Repository = "https://github.com/your-username/tracelens-python-sdk"
 Issues = "https://github.com/your-username/tracelens-python-sdk/issues"
 
 [tool.setuptools]
-packages = ["universal_debugger"]
+packages = ["tracelens"]
 
 [tool.setuptools.package-data]
 "*" = ["py.typed"]

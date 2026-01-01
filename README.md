@@ -1,264 +1,111 @@
 # TraceLens Python SDK
 
-> **Trace, observe, and visualize AI agent runs** — See inside your LLM workflows with an interactive timeline graph.
+**Visual debugging and observability for AI agents**
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+TraceLens automatically captures and visualizes your AI agent runs—LLM calls, tool invocations, latency, tokens, and errors—as an interactive timeline graph. Works with any framework: LangChain, AutoGPT, CrewAI, LlamaIndex, or custom agents.
 
-The official Python SDK for [TraceLens](https://www.tracelensapp.com) - a framework-agnostic observability tool for AI agents. Works with **any** framework or custom code.
+## Installation
 
-## ✨ Features
-
-- 🎯 **1-Line Integration** - Just wrap your code with `trace_agent()`
-- 🔄 **Automatic Tracking** - Automatically detects LLM calls, tool executions, and errors
-- 🌐 **Universal Framework Support** - Works with LangChain, AutoGPT, CrewAI, LlamaIndex, custom agents, and direct API calls
-- 📊 **Visual Debugging** - View traces as interactive graphs in the TraceLens dashboard
-- 🚀 **Zero Code Changes** - No manual instrumentation needed for most use cases
-- 🔒 **Secure** - API key authentication, encrypted data transmission
-
-## 📦 Installation
-
-### From PyPI (Coming Soon)
+Early access via GitHub:
 
 ```bash
-pip install tracelens
+pip install git+https://github.com/<your-username>/tracelens.git
 ```
 
-### From Source
-
-```bash
-git clone https://github.com/your-username/tracelens-python-sdk.git
-cd tracelens-python-sdk
-pip install -e .
-```
-
-## 🚀 Quick Start
-
-### 1. Get Your API Key
-
-1. Sign up at [TraceLens](https://www.tracelensapp.com)
-2. Go to Settings → Ingest API Keys
-3. Generate a new API key
-4. Copy it (you won't see it again!)
-
-### 2. Set Environment Variables
-
-```bash
-export DEBUGGER_API_KEY="your-api-key-here"
-export DEBUGGER_URL="https://www.tracelensapp.com"  # Optional, defaults to this
-```
-
-Or create a `.env` file:
-
-```bash
-DEBUGGER_API_KEY=your-api-key-here
-DEBUGGER_URL=https://www.tracelensapp.com
-```
-
-### 3. Use in Your Code
-
-**Automatic tracking (recommended):**
+## Quickstart
 
 ```python
-from universal_debugger import trace_agent
-from openai import OpenAI
-import os
+from tracelens import trace_agent
 
-# Set API key (or use environment variable)
+# Set your API key (get it from https://www.tracelensapp.com/settings)
+import os
 os.environ["DEBUGGER_API_KEY"] = "your-api-key-here"
 
-# Wrap your agent code - everything is automatically tracked!
+# Wrap your agent code - that's it!
 with trace_agent("my-agent"):
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": "What is 2+2?"}]
-    )
-    
-    print(response.choices[0].message.content)
-
-# Trace is automatically sent when the 'with' block ends!
+    result = my_agent.run(query)
+    # Automatically tracked! ✅
 ```
 
-**Manual tracking (more control):**
+View your traces at: **https://www.tracelensapp.com/app**
+
+## How It Works
+
+**Thin SDK, Smart Backend**
+
+The TraceLens SDK is intentionally lightweight—it collects raw events (HTTP requests, function calls, logs) and sends them to the TraceLens backend. All intelligence—LLM detection, provider classification, token counting, graph visualization—happens server-side.
+
+This means:
+- ✅ **Minimal overhead** - Just event collection, no heavy processing
+- ✅ **Always up-to-date** - New features appear automatically
+- ✅ **Framework agnostic** - Works with any Python agent code
+
+### What Gets Tracked
+
+- **LLM calls** - Automatic interception of OpenAI, Anthropic, Google, and other providers
+- **Tool invocations** - Function calls decorated with `@trace_tool`
+- **HTTP requests** - All HTTP traffic via `requests` and `httpx`
+- **Logs** - Captured print statements and logging output
+- **Errors** - Exceptions and failures
+
+## Advanced Usage
+
+### Manual Event Tracking
 
 ```python
-from universal_debugger import DebuggerClient, TraceBuilder
+from tracelens import TraceLensClient, TraceBuilder
 
-client = DebuggerClient(api_key="your-api-key-here")
+client = TraceLensClient(api_key="your-api-key")
 trace = TraceBuilder("my-agent")
 
-# Add steps manually
+# Add HTTP event
 trace.add_http_event(
     method="POST",
     url="https://api.openai.com/v1/chat/completions",
-    request_body={"model": "gpt-4o-mini", "messages": [...]},
+    request_body={"model": "gpt-4", "messages": [...]},
     response_status=200,
     response_body={"choices": [...]},
-    started_at=start_time,
-    ended_at=end_time
 )
 
 # Send trace
 client.send_trace(trace, status="success")
 ```
 
-## 📖 Documentation
-
-### Basic Usage
-
-```python
-from universal_debugger import trace_agent, trace_tool
-
-# Automatic tracking
-with trace_agent("my-agent"):
-    # All LLM calls, tool calls, and errors are automatically tracked
-    result = my_agent.run(query)
-```
-
 ### Tool Decorator
 
 ```python
-from universal_debugger import trace_tool
+from tracelens import trace_agent, trace_tool
 
 @trace_tool("search_web")
 def search_web(query: str):
-    """Search the web"""
     return f"Results for: {query}"
 
 with trace_agent("my-agent"):
-    results = search_web("Python tutorials")
+    result = search_web("Python tutorials")
     # Tool automatically tracked! ✅
 ```
 
-### Direct Client Usage
-
-```python
-from universal_debugger import DebuggerClient, TraceBuilder
-
-client = DebuggerClient(
-    api_key="your-api-key",
-    base_url="https://www.tracelensapp.com"  # Optional
-)
-
-trace = TraceBuilder("my-agent", environment="production")
-
-# Add HTTP events
-trace.add_http_event(
-    method="POST",
-    url="https://api.openai.com/v1/chat/completions",
-    request_body={...},
-    response_status=200,
-    response_body={...},
-    started_at=start_time,
-    ended_at=end_time
-)
-
-# Add function events
-trace.add_function_event(
-    function_name="process_data",
-    args={"input": "data"},
-    result="processed",
-    started_at=start_time,
-    ended_at=end_time
-)
-
-# Add logs
-trace.add_log("info", "Processing started")
-trace.add_log("error", "Something went wrong", metadata={"code": 500})
-
-# Send trace
-trace_id = client.send_trace(trace, status="success")
-```
-
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
-- `DEBUGGER_API_KEY` (required) - Your TraceLens API key
-- `DEBUGGER_URL` (optional) - Base URL of TraceLens service (defaults to `https://www.tracelensapp.com`)
-- `DEBUGGER_ENV` (optional) - Environment name (defaults to `production`)
-- `DEBUGGER_DEBUG` (optional) - Enable debug logging (`1` to enable)
-- `DEBUGGER_DISABLE_FUNCTION_TRACING` (optional) - Disable automatic function tracing (`1` to disable)
-- `DEBUGGER_DISABLE_LOG_CAPTURE` (optional) - Disable automatic log capture (`1` to disable)
+- `DEBUGGER_API_KEY` - Your API key (required)
+- `DEBUGGER_BASE_URL` - Backend URL (defaults to `https://www.tracelensapp.com`)
+- `DEBUGGER_DISABLE_FUNCTION_TRACING` - Set to `"1"` to disable automatic function tracing
+- `DEBUGGER_DISABLE_LOG_CAPTURE` - Set to `"1"` to disable log capture
 
-## 🎯 Supported Frameworks
+### Get Your API Key
 
-The SDK automatically tracks:
+1. Sign up at [https://www.tracelensapp.com](https://www.tracelensapp.com)
+2. Go to Settings → API Keys
+3. Generate a new ingest API key
+4. Copy it immediately (you won't see it again!)
 
-- ✅ **OpenAI SDK** - All `chat.completions.create()` calls
-- ✅ **Anthropic SDK** - Claude API calls (via HTTP interception)
-- ✅ **Google AI SDK** - Gemini API calls (via HTTP interception)
-- ✅ **LangChain** - Agent executions and tool calls
-- ✅ **Custom HTTP clients** - Any `requests` or `httpx` calls
-- ✅ **Function calls** - Automatic function call tracking
-- ✅ **Logs** - Automatic `print()` and `logging` capture
+## Documentation
 
-## 📚 Examples
-
-See [`example_usage.py`](example_usage.py) for complete examples.
-
-### Example: LangChain Agent
-
-```python
-from universal_debugger import trace_agent
-from langchain.agents import AgentExecutor, create_openai_tools_agent
-from langchain_openai import ChatOpenAI
-
-with trace_agent("langchain-agent"):
-    llm = ChatOpenAI(model="gpt-4o-mini")
-    agent = create_openai_tools_agent(llm, tools, prompt)
-    executor = AgentExecutor(agent=agent, tools=tools)
-    
-    result = executor.invoke({"input": "What is the weather?"})
-    # All LLM calls and tool executions are automatically tracked!
-```
-
-### Example: Custom Agent with Tools
-
-```python
-from universal_debugger import trace_agent, trace_tool
-
-@trace_tool("search")
-def search_knowledge_base(query: str):
-    return f"Results for: {query}"
-
-@trace_tool("calculate")
-def calculate(expression: str):
-    return eval(expression)
-
-with trace_agent("custom-agent"):
-    # Your agent code here
-    results = search_knowledge_base("Python")
-    answer = calculate("2 + 2")
-    # All tool calls are automatically tracked!
-```
-
-## 🔍 Viewing Traces
-
-After sending a trace:
-
-1. Go to [TraceLens Dashboard](https://www.tracelensapp.com/app)
-2. Find your trace by app name (e.g., "my-agent")
-3. Click to view the interactive graph
-4. Explore steps, timing, tokens, and logs
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Links
-
-- **Website**: [https://www.tracelensapp.com](https://www.tracelensapp.com)
+- **Web UI**: [https://www.tracelensapp.com/app](https://www.tracelensapp.com/app)
 - **Documentation**: [https://www.tracelensapp.com/docs](https://www.tracelensapp.com/docs)
-- **Support**: support@tracelensapp.com
 
-## 🙏 Acknowledgments
+## License
 
-Built for developers who want to understand what their AI agents are doing.
-
+MIT

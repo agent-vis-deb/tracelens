@@ -189,3 +189,4 @@ class TraceBuilder:
         }
         
         self.logs.append(log_entry)
+

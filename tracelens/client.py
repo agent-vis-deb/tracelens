@@ -295,10 +295,10 @@ def _install_openai_sdk_adapter() -> None:
 
     for cls, path in candidates:
         try:
-            if hasattr(cls, "create") and not hasattr(getattr(cls, "create"), "_universal_debugger_patched"):
+            if hasattr(cls, "create") and not hasattr(getattr(cls, "create"), "_tracelens_patched"):
                 original = getattr(cls, "create")
                 wrapped = _wrap_create(original, path)
-                wrapped._universal_debugger_patched = True  # type: ignore
+                wrapped._tracelens_patched = True  # type: ignore
                 setattr(cls, "create", wrapped)
                 patched_any = True
         except Exception:
@@ -389,16 +389,16 @@ class HTTPInterceptor:
             import httpx
             
             # Check if already patched (either by us or by early patch)
-            if hasattr(httpx.Client, '_universal_debugger_original_request'):
-                self._original_httpx_request = httpx.Client._universal_debugger_original_request
+            if hasattr(httpx.Client, '_tracelens_original_request'):
+                self._original_httpx_request = httpx.Client._tracelens_original_request
             elif not hasattr(httpx.Client, '_original_request'):
                 self._original_httpx_request = httpx.Client.request
-                httpx.Client._universal_debugger_original_request = httpx.Client.request
+                httpx.Client._tracelens_original_request = httpx.Client.request
             else:
                 self._original_httpx_request = httpx.Client._original_request
             
             # Only patch if not already patched
-            if not hasattr(httpx.Client.request, '_universal_debugger_patched'):
+            if not hasattr(httpx.Client.request, '_tracelens_patched'):
                 
                 @functools.wraps(self._original_httpx_request)
                 def wrapped_httpx_request(self_client, method, url, **kwargs):
@@ -458,7 +458,7 @@ class HTTPInterceptor:
                 # Patch the class method - this affects all existing and future instances
                 httpx.Client.request = wrapped_httpx_request
                 httpx.Client.request._original = self._original_httpx_request
-                httpx.Client.request._universal_debugger_patched = True
+                httpx.Client.request._tracelens_patched = True
                 
                 # Also try to patch at the module level if httpx uses a different structure
                 # Some libraries create clients via httpx._client or httpx._transports
@@ -476,16 +476,16 @@ class HTTPInterceptor:
             
             # Intercept httpx.AsyncClient (async)
             # Check if already patched
-            if hasattr(httpx.AsyncClient, '_universal_debugger_original_request'):
-                self._original_httpx_async_request = httpx.AsyncClient._universal_debugger_original_request
+            if hasattr(httpx.AsyncClient, '_tracelens_original_request'):
+                self._original_httpx_async_request = httpx.AsyncClient._tracelens_original_request
             elif not hasattr(httpx.AsyncClient, '_original_request'):
                 self._original_httpx_async_request = httpx.AsyncClient.request
-                httpx.AsyncClient._universal_debugger_original_request = httpx.AsyncClient.request
+                httpx.AsyncClient._tracelens_original_request = httpx.AsyncClient.request
             else:
                 self._original_httpx_async_request = httpx.AsyncClient._original_request
             
             # Only patch if not already patched
-            if not hasattr(httpx.AsyncClient.request, '_universal_debugger_patched'):
+            if not hasattr(httpx.AsyncClient.request, '_tracelens_patched'):
                 
                 @functools.wraps(self._original_httpx_async_request)
                 async def wrapped_httpx_async_request(self_client, method, url, **kwargs):
@@ -549,7 +549,7 @@ class HTTPInterceptor:
                 
                 httpx.AsyncClient.request = wrapped_httpx_async_request
                 httpx.AsyncClient.request._original = self._original_httpx_async_request
-                httpx.AsyncClient.request._universal_debugger_patched = True
+                httpx.AsyncClient.request._tracelens_patched = True
                 _debug_print("[DEBUGGER] Intercepted httpx.AsyncClient")
                 
         except ImportError:
@@ -684,7 +684,7 @@ class TraceContext:
                     return None
                 
                 # Skip debugger's own functions
-                if 'universal_debugger' in filename or 'debugger' in filename.lower():
+                if 'tracelens' in filename or 'debugger' in filename.lower():
                     return None
                 
                 # Skip built-ins and stdlib

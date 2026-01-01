@@ -10,7 +10,7 @@ Works with ANY framework:
 - Direct API calls (OpenAI, Anthropic, Google, etc.)
 
 Usage (1 line integration):
-    from universal_debugger import trace_agent
+    from tracelens import trace_agent
     
     with trace_agent("my-agent", api_key="..."):
         # ANY code here - automatically tracked!
@@ -26,10 +26,10 @@ def _early_httpx_patch():
     try:
         import httpx
         # Store original if not already stored
-        if not hasattr(httpx.Client, '_universal_debugger_original_request'):
-            httpx.Client._universal_debugger_original_request = httpx.Client.request
-        if not hasattr(httpx.AsyncClient, '_universal_debugger_original_request'):
-            httpx.AsyncClient._universal_debugger_original_request = httpx.AsyncClient.request
+        if not hasattr(httpx.Client, '_tracelens_original_request'):
+            httpx.Client._tracelens_original_request = httpx.Client.request
+        if not hasattr(httpx.AsyncClient, '_tracelens_original_request'):
+            httpx.AsyncClient._tracelens_original_request = httpx.AsyncClient.request
     except ImportError:
         pass  # httpx not available yet
 
@@ -47,8 +47,12 @@ from .client import (
     get_trace,
 )
 
+# Public API alias - TraceLensClient is the preferred name
+TraceLensClient = DebuggerClient
+
 __all__ = [
-    "DebuggerClient",
+    "TraceLensClient",
+    "DebuggerClient",  # Keep for backward compatibility
     "TraceBuilder",
     "trace_agent",
     "trace_tool",
