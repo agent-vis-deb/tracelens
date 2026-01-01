@@ -38,8 +38,8 @@ dev = [
 [project.urls]
 Homepage = "https://www.tracelensapp.com"
 Documentation = "https://www.tracelensapp.com/docs"
-Repository = "https://github.com/your-username/tracelens-python-sdk"
-Issues = "https://github.com/your-username/tracelens-python-sdk/issues"
+Repository = "https://github.com/agent-vis-deb/tracelens"
+Issues = "https://github.com/agent-vis-deb/tracelens/issues"
 
 [tool.setuptools]
 packages = ["tracelens"]
